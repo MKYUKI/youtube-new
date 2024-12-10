@@ -8,3 +8,7 @@ pdfplumber
 exifread
 pdfplumber
 python-docx
+exifread
+pdfplumber
+python-docx
+plotly
