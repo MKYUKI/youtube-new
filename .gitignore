@@ -3,3 +3,9 @@ gmail.api/secrets.toml
 .ipynb_checkpoints/secret-checkpoint.json
 gmail.api/secrets.toml
 .ipynb_checkpoints/secret-checkpoint.json
+echo "gmail.api/secrets.toml" >> .gitignore
+echo ".ipynb_checkpoints/secret-checkpoint.json" >> .gitignore
+git add .gitignore
+git commit -m "Add secret files to .gitignore"
+gmail.api/secrets.toml
+.ipynb_checkpoints/secret-checkpoint.json
