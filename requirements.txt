@@ -12,3 +12,8 @@ exifread
 pdfplumber
 python-docx
 plotly
+exifread
+pdfplumber
+python-docx
+plotly
+pydub
