@@ -27,7 +27,7 @@ import openai
 ########################################################
 # 初期設定
 ########################################################
-st.set_page_config(page_title="究極融合アプリ", page_icon="✨", layout="wide")
+st.set_page_config(page_title="融合アプリ", page_icon="✨", layout="wide")
 
 # カスタムCSSを追加（洗練されたUI）
 custom_css = """
@@ -232,7 +232,7 @@ def synthesize_speech_chunk(text, lang_code, gender='neutral'):
 # サイドバー
 ########################################################
 with st.sidebar:
-    st.markdown("<h1 style='color:white;'>世界最先端融合</h1>",unsafe_allow_html=True)
+    st.markdown("<h1 style='color:white;'>融合</h1>",unsafe_allow_html=True)
     st.markdown("#### EXIF解析 & 超大規模TTS & GPT対話")
     expander = st.expander("🗀 ファイル入力")
     with expander:
