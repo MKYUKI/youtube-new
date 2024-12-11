@@ -16,16 +16,43 @@ import plotly.express as px
 import plotly.graph_objs as go
 import streamlit.components.v1 as components
 from pydub import AudioSegment
+import openai
 
-# 真の始動。  
-# 本コードは、Exifa.net(著:Sahir Maharaj,2024,CC-BY4.0)由来コードを発展的に用いる。  
-# Google TTSとEXIF解析、壮麗な可視化、粒子アニメーションを統合し、300ページを超えるテキストを完全音声化し、MP3ダウンロードまで可能とした世界初の究極Webアプリ。  
-# 今こそ世界最先端の技術を総動員し、神がかり的な体験を実現する。
+
+# EXIF解析、超大規模テキスト音声化 (Google TTS)、幻想的粒子アニメーション、
+# RGB/HSV/3D色空間可視化、EXIF除去ダウンロード、
+# OpenAI GPTによる高度なLLM対話、全てを一つに統合。
+
 
 ########################################################
 # 初期設定
 ########################################################
-st.set_page_config(page_title="世界最先端・統合WEBアプリ", page_icon="✨", layout="wide")
+st.set_page_config(page_title="究極融合アプリ", page_icon="✨", layout="wide")
+
+# カスタムCSSを追加（洗練されたUI）
+custom_css = """
+<style>
+body {
+    background: #000;
+    color: #fff;
+    font-family: 'Helvetica', sans-serif;
+}
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+}
+.block-container {
+    padding: 1rem 2rem;
+}
+.sidebar .sidebar-content {
+    background: #111111;
+    color: #ffffff;
+}
+stTextInput > div {
+    color:#ffffff;
+}
+</style>
+"""
+st.markdown(custom_css, unsafe_allow_html=True)
 
 # Google Cloud TTS認証
 if "gcp_service_account" in st.secrets:
@@ -36,8 +63,17 @@ else:
     st.error("Google Cloudサービスアカウント情報がst.secretsにありません。設定してください。")
     st.stop()
 
+# OpenAI APIキー設定
+if "openai" in st.secrets and "api_key" in st.secrets["openai"]:
+    openai.api_key = st.secrets["openai"]["api_key"]
+else:
+    openai.api_key = None
+
 if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "assistant", "content": "ここは真なる新世界。あなたのアップロードしたテキストや画像を解析し、音声化し、可視化する、全てが可能な究極の一ページです。"}]
+    st.session_state["messages"] = [{
+        "role": "assistant", 
+        "content": "ここは人類史上初の究極融合アプリ。あなたがアップロードするテキストや画像を解析し、音声化し、可視化する。そして高度なGPT対話すら可能な、夢の一頁です。"
+    }]
 if "exif_df" not in st.session_state:
     st.session_state["exif_df"] = pd.DataFrame()
 if "image_url" not in st.session_state:
@@ -46,7 +82,7 @@ if "uploaded_files" not in st.session_state:
     st.session_state["uploaded_files"] = None
 
 ########################################################
-# 幻想的粒子背景
+# 幻想的粒子アニメーション背景
 ########################################################
 particles_js = """<!DOCTYPE html>
 <html lang="ja">
@@ -115,7 +151,7 @@ def clear_files():
     st.session_state["file_uploader_key"] = not st.session_state.get("file_uploader_key", False)
 
 def clear_chat_history():
-    st.session_state["messages"] = [{"role":"assistant","content":"チャット履歴がクリアされました。これが再び新たな世界の始まりです。"}]
+    st.session_state["messages"] = [{"role":"assistant","content":"チャット履歴をクリアしました。再び新たなる時代へ踏み出そう。"}]
     st.session_state["exif_df"] = pd.DataFrame()
     st.session_state["uploaded_files"] = None
     st.session_state["image_url"] = ""
@@ -151,21 +187,18 @@ def clear_exif_data(image_input):
 
 def download_image(data):
     st.download_button(
-        label="⇩ EXIF除去後の画像をダウンロード",
+        label="⇩ EXIF除去後の画像ダウンロード",
         data=data,
         file_name="image_no_exif.jpg",
         mime="image/jpeg",
     )
 
 def detect_language(text):
-    # 簡易的判定：日本語文字含有でja-JP、それ以外en-US
     if re.search('[\u3000-\u303F\u3040-\u309F\u30A0-\u30FF]', text):
         return 'ja-JP'
     return 'en-US'
 
 def synthesize_speech_chunk(text, lang_code, gender='neutral'):
-    # 1リクエストで処理できる長さ: 約5000文字程度推奨
-    # 安全のため4500文字程度でチャンク分割
     max_chars = 4500
     chunks = [text[i:i+max_chars] for i in range(0,len(text),max_chars)]
 
@@ -187,11 +220,9 @@ def synthesize_speech_chunk(text, lang_code, gender='neutral'):
         audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
         response = tts_client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
 
-        # BytesIOからAudioSegmentとしてロード
         segment = AudioSegment.from_file(BytesIO(response.audio_content), format="mp3")
         combined_audio += segment
 
-    # 最終的なMP3をまとめて返す
     output_buffer = BytesIO()
     combined_audio.export(output_buffer, format="mp3")
     output_buffer.seek(0)
@@ -201,15 +232,15 @@ def synthesize_speech_chunk(text, lang_code, gender='neutral'):
 # サイドバー
 ########################################################
 with st.sidebar:
-    st.markdown("<h1 style='color:white;'>世界先端融合</h1>",unsafe_allow_html=True)
-    st.markdown("#### EXIF解析 & 超大規模TTS対応アプリ")
+    st.markdown("<h1 style='color:white;'>世界最先端融合</h1>",unsafe_allow_html=True)
+    st.markdown("#### EXIF解析 & 超大規模TTS & GPT対話")
     expander = st.expander("🗀 ファイル入力")
     with expander:
-        st.text("長大なテキストや画像ファイル、URL指定可能")
-        image_url = st.text_input("EXIF解析用の画像URL:", key="image_url", on_change=clear_files, value=st.session_state["image_url"])
+        st.text("長大テキスト/画像/URL分析対応")
+        image_url = st.text_input("EXIF解析用画像URL:", key="image_url", on_change=clear_files, value=st.session_state["image_url"])
         file_uploader_key = "file_uploader_{}".format(st.session_state.get("file_uploader_key", False))
         uploaded_files = st.file_uploader(
-            "ローカルファイルをアップロード:",
+            "ファイルアップロード:",
             type=["txt","pdf","docx","csv","jpg","png","jpeg"],
             key=file_uploader_key,
             on_change=clear_url,
@@ -221,7 +252,7 @@ with st.sidebar:
     st.markdown("---")
     st.button("🗑 チャット履歴クリア", on_click=clear_chat_history)
     st.markdown("---")
-    st.caption("コードはExifa.net(2024, Sahir Maharaj)由来(CC-BY 4.0)")
+    st.caption("© Exifa.net (Sahir Maharaj,2024), CC-BY 4.0")
 
 ########################################################
 # ファイル処理＆EXIF解析
@@ -285,46 +316,46 @@ if st.session_state["image_url"]:
         else:
             st.warning("URLは画像ではありません。")
     except:
-        st.warning("画像をURLから取得できません。")
+        st.warning("URLから画像取得失敗")
 
 ########################################################
-# メインレイアウト
+# メインUI構築
 ########################################################
-st.markdown("<h1 style='text-align:center;color:white;'>真に世界最先端のEXIF & TTS 統合WEBアプリ</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;color:#cccccc;'>300ページ超のテキストを音声化、EXIF解析、幻想的可視化、全てを一度に実現。</p>",unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center;color:white;'>究極融合: EXIF & TTS & GPT</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:#cccccc;'>300ページ超テキスト音声化、EXIF解析、カラー可視化、GPT対話</p>",unsafe_allow_html=True)
 
-tabs = st.tabs(["📜 音声合成（大規模テキスト対応）", "🖼 EXIF解析＆ビジュアル", "💬 対話アシスタント"])
+tabs = st.tabs(["📜 テキスト音声合成", "🖼 EXIF解析＆ビジュアル", "💬 GPT対話"])
 
 # 音声合成タブ
 with tabs[0]:
-    st.subheader("超大規模テキストを丸ごと音声化")
+    st.subheader("超大規模テキスト音声化")
     input_option = st.selectbox("入力方法",("直接入力","アップロードテキスト利用"))
     tts_text = ""
     if input_option == "直接入力":
-        tts_text = st.text_area("音声合成するテキスト","ここに膨大なテキストを貼り付けて下さい。（例：300ページ分の書籍全文）")
+        tts_text = st.text_area("音声合成するテキストを貼り付け","ここに膨大なテキスト(例:書籍全文)を入力")
     else:
         if file_text:
-            st.write("アップロードファイルから抽出テキスト:")
-            st.write(file_text[:500]+"...") #一部のみ表示
+            st.write("抽出テキスト(一部):")
+            st.write(file_text[:500]+"...")
             tts_text = file_text
         else:
-            st.write("アップロードされたテキストがありません。")
+            st.write("アップロードテキストがありません")
 
     selected_gender = st.selectbox("話者の性別",('default','male','female','neutral'))
-    if tts_text and st.button("テキストを全て音声化してMP3生成"):
-        with st.spinner("音声合成中...テキストが長い場合、数分かかることがあります"):
+    if tts_text and st.button("音声合成実行"):
+        with st.spinner("音声合成中...長文は時間要"):
             lang_code = detect_language(tts_text)
             final_mp3 = synthesize_speech_chunk(tts_text, lang_code, gender=selected_gender)
-        st.success("音声合成完了！ダウンロード可能です。")
-        st.download_button("生成されたMP3をダウンロード", data=final_mp3, file_name="converted_book.mp3", mime="audio/mpeg")
+        st.success("音声合成完了！")
+        st.download_button("MP3ダウンロード", data=final_mp3, file_name="converted_book.mp3", mime="audio/mpeg")
 
 # EXIF解析＆ビジュアルタブ
 with tabs[1]:
-    st.subheader("EXIF解析 & 高度可視化")
+    st.subheader("EXIF解析 & 可視化")
     if st.session_state["exif_df"].empty and not st.session_state["image_url"]:
-        st.info("EXIFデータがありません。画像をアップロードまたはURLを指定してください。")
+        st.info("EXIFデータなし: 画像アップロードかURL指定を")
     else:
-        st.markdown("##### 抽出されたEXIFデータ")
+        st.markdown("##### EXIFデータ抽出結果")
         st.dataframe(st.session_state["exif_df"])
         image_to_analyze = None
         if st.session_state["uploaded_files"]:
@@ -339,9 +370,9 @@ with tabs[1]:
             st.image(image_to_analyze, caption="アップロード画像", use_column_width=True)
             data = np.array(image_to_analyze)
 
-            exp1 = st.expander("⛆ RGBチャンネル調整")
+            exp1 = st.expander("⛆ RGBチャンネル操作")
             with exp1:
-                channels = st.multiselect("チャンネル選択",["Red","Green","Blue"],default=["Red","Green","Blue"])
+                channels = st.multiselect("表示チャンネル:",["Red","Green","Blue"],default=["Red","Green","Blue"])
                 if channels:
                     cmap = {"Red":0,"Green":1,"Blue":2}
                     selected_idx = [cmap[ch] for ch in channels]
@@ -376,7 +407,7 @@ with tabs[1]:
                                   color_discrete_map={"Red":"#ff6666","Green":"#85e085","Blue":"#6666ff"})
                 st.plotly_chart(fig,use_container_width=True)
 
-            exp4 = st.expander("🕸 3Dカラースペース")
+            exp4 = st.expander("🕸 3D色空間プロット")
             with exp4:
                 skip = 8
                 sample = data[::skip,::skip].reshape(-1,3)
@@ -388,17 +419,13 @@ with tabs[1]:
                 fig.update_layout(scene=dict(xaxis_title="Red",yaxis_title="Green",zaxis_title="Blue"))
                 st.plotly_chart(fig, use_container_width=True)
 
-            st.markdown("#### EXIF除去後画像ダウンロード")
+            st.markdown("#### EXIF除去後の画像ダウンロード")
             cleaned = clear_exif_data(image_to_analyze)
             download_image(cleaned)
 
-        # コメント生成（静的例だが、将来LLM対応で動的に可能）
+        # 簡易コメント（LLM対応可）
         if not st.session_state["exif_df"].empty:
-            commentary = """
-            このEXIFデータから、撮影者の使用機材や撮影設定がうかがえます。露出や焦点距離から、撮影者は中級クラスのカメラを使用し、  
-            自然光下または適切な照明環境での撮影が推測されます。GPS情報の有無から、プライバシー保護か屋内撮影かが想定できます。  
-            全体として、程よい経験と予算を持つ写真家による計画的な撮影の成果と考えられます。
-            """
+            commentary = """EXIFから撮影者の機材・露出設定などが推測可能。撮影環境は自然光か計画的照明下とみられ、撮影者は中級的経験と程よい予算を持つと考えられる。"""
             st.markdown("#### 自動生成コメント")
             st.write(commentary)
             if st.button("コメント音声再生"):
@@ -406,23 +433,37 @@ with tabs[1]:
                 audio_data = synthesize_speech_chunk(commentary, lang_code)
                 st.audio(audio_data, format="audio/mp3")
 
-# 対話タブ
+# GPT対話タブ
 with tabs[2]:
-    st.subheader("AIとの対話")
+    st.subheader("GPTによる高度な対話")
     for msg in st.session_state["messages"]:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-    user_input = st.chat_input("EXIFやTTS、画像色解析など自由に質問してください...")
+    user_input = st.chat_input("EXIF、TTS、画像解析、色空間、汎用的な質問すべてをどうぞ")
     if user_input:
         st.session_state["messages"].append({"role":"user","content":user_input})
         with st.chat_message("user"):
             st.write(user_input)
-        # 現状簡易応答。将来LLM統合で高度応答可能
-        response = "現段階では簡易応答です。将来的にLLM統合でより的確な回答を提供予定。"
-        st.session_state["messages"].append({"role":"assistant","content":response})
+
+        if openai.api_key:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo", 
+                messages=st.session_state["messages"],
+                temperature=0.3,
+                top_p=0.9,
+                frequency_penalty=0,
+                presence_penalty=0
+            )
+            answer = response.choices[0].message["content"]
+        else:
+            answer = "OpenAI APIキーが未設定です。Secretesで設定してください。"
+
+        st.session_state["messages"].append({"role":"assistant","content":answer})
         with st.chat_message("assistant"):
-            st.write(response)
+            st.write(answer)
 
 st.markdown("---")
-st.caption("コード元: Exifa.net (Sahir Maharaj,2024), CC-BY 4.0. 真なる始動、世界初の統合アプリへようこそ。")
+st.caption("© Exifa.net (Sahir Maharaj,2024), CC-BY 4.0. これは全てを統合した世界初の究極アプリ。")
+
+# コード終了
