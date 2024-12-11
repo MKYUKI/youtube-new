@@ -1,0 +1,15 @@
+// backend/prisma/schema.prisma
+// 既存モデルは維持し、最後に追加
+
+model OAuthAccount {
+  id               Int    @id @default(autoincrement())
+  provider         String
+  providerAccountId String
+  user             User   @relation(fields: [userId], references: [id])
+  userId           Int
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+}
