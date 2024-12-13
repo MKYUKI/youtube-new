@@ -125,3 +125,4 @@ celerybeat-schedule
 .mypy_cache/
 >>>>>>> a69175fdba0df4baec5a6f455aab6347ceeb0f74
 streamlit/secrets.toml
+.DS_Store
