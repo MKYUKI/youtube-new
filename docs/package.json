@@ -1,0 +1,19 @@
+{
+    "name": "x-like-webapp",
+    "version": "0.0.1",
+    "private": true,
+    "workspaces": [
+      "backend",
+      "frontend"
+    ],
+    "scripts": {
+      "dev": "echo \"Run frontend and backend dev scripts in parallel later\"",
+      "build": "echo \"Build scripts for backend/frontend\"",
+      "start": "echo \"Start the production server (will define later)\""
+    },
+    "dependencies": {
+      "bcrypt": "^5.1.0",
+      "jsonwebtoken": "^9.0.0"
+    }
+  }
+  

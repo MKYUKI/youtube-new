@@ -1,0 +1,42 @@
+// backend/prisma/schema.prisma
+
+// 以下は前回のschemaに追記
+// (User, Tweet, Like, Retweet, Followsモデルは前回定義済み)
+
+model ExternalInstance {
+  id          Int      @id @default(autoincrement())
+  baseUrl     String   // 外部インスタンスのベースURL(例: https://mastodon.social)
+  instanceType String?  // 種類(ActivityPub実装等)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  externalUsers ExternalUser[]
+}
+
+model ExternalUser {
+  id          Int      @id @default(autoincrement())
+  externalId  String
+  username    String
+  displayName String?
+  avatarUrl   String?
+  instance    ExternalInstance @relation(fields: [instanceId], references: [id])
+  instanceId  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // このExternalUserが作った外部投稿をローカルにキャッシュするためのモデルは後続で検討
+}
+
+model PluginInfo {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  version    String
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model MetaData {
+  id     Int    @id @default(autoincrement())
+  key    String @unique
+  value  String
+}
